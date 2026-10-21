@@ -1,0 +1,68 @@
+---
+title: "Lunch Frequency by Gender"
+subtitle: "Dietary Habits Survey | Exploratory Data Analysis"
+output:
+  html_document:
+    toc: true
+    code_folding: hide
+    self_contained: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Objective
+
+Explore the distribution of weekly lunch frequency by self-reported gender. This is a descriptive comparison, not an analysis of causal effects.
+
+## Load and validate
+
+```{r load-and-validate}
+input_path <- "survey_data.csv"
+if (!file.exists(input_path)) stop("A locally authorised survey_data.csv is required.")
+diet <- read.csv(input_path, stringsAsFactors = FALSE)
+stopifnot(all(c("Lunch", "Gender") %in% names(diet)))
+stopifnot(is.numeric(diet$Lunch), !anyNA(diet$Lunch))
+stopifnot(all(diet$Lunch %in% 0:7), all(diet$Lunch == as.integer(diet$Lunch)))
+stopifnot(!anyNA(diet$Gender), all(nzchar(trimws(diet$Gender))))
+analysis <- data.frame(
+  days = factor(diet$Lunch, levels = 0:7),
+  gender = factor(diet$Gender)
+)
+cat("Respondents:", nrow(analysis), "\n")
+cat("Source variables:", ncol(diet), "\n")
+cat("Missing values in analysis:", sum(is.na(analysis)), "\n")
+```
+
+## Visualisation
+
+This single stacked bar chart displays respondent counts by lunch frequency and gender.
+
+```{r lunch-chart, fig.width=10, fig.height=5.8, dpi=140, fig.align='center', fig.cap='Weekly lunch frequency by gender (respondent counts).'}
+library(ggplot2)
+lunch_chart <- ggplot(analysis, aes(x = days, fill = gender)) +
+  geom_bar(width = 0.8) +
+  scale_x_discrete(drop = FALSE) +
+  labs(title = "Lunch Frequency by Gender",
+       x = "Days per week", y = "Respondents (count)",
+       fill = "Gender") +
+  theme_minimal(base_size = 12)
+lunch_chart
+```
+
+## Descriptive summary
+
+```{r summary}
+frequency <- as.integer(table(factor(diet$Lunch, levels = 0:7)))
+knitr::kable(data.frame(Days_per_week = 0:7, Respondents = frequency))
+cat("Reporting lunch every day:", frequency[8], "of", nrow(diet),
+    sprintf("(%.1f%%)", 100 * frequency[8] / nrow(diet)), "\n")
+```
+
+## Limitations
+
+Gender groups are imbalanced in this sample. One category has only one respondent; avoid population-level interpretations or comparisons based on that group. No causal claims can be made from these cross-sectional self-reports.
+
+The respondent-level dataset is intentionally kept out of the public repository.

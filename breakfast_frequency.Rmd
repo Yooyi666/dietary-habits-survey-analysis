@@ -1,0 +1,83 @@
+---
+title: "Breakfast Frequency by Employment Category"
+subtitle: "Dietary Habits Survey | Exploratory Data Analysis"
+output:
+  html_document:
+    toc: true
+    code_folding: hide
+    self_contained: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Objective
+
+Explore how reported breakfast frequency varies across employment categories. The findings describe the observed sample and do not imply causation.
+
+## Load and validate
+
+```{r load-and-validate}
+input_path <- "survey_data.csv"
+if (!file.exists(input_path)) stop("A locally authorised survey_data.csv is required.")
+diet <- read.csv(input_path, stringsAsFactors = FALSE)
+stopifnot(all(c("Breakfast", "Employment") %in% names(diet)))
+stopifnot(is.numeric(diet$Breakfast), !anyNA(diet$Breakfast))
+stopifnot(all(diet$Breakfast %in% 0:7), all(diet$Breakfast == as.integer(diet$Breakfast)))
+stopifnot(!anyNA(diet$Employment), all(nzchar(trimws(diet$Employment))))
+
+# Stable presentation names for seven categories, in alphabetical source order.
+# The source category counts are checked to prevent an accidental remapping.
+status_levels <- sort(unique(diet$Employment))
+status_labels <- c(
+  "Full-time employee", "Part-time employee", "Retired",
+  "Secondary enrolment", "Self-employed", "Unemployed",
+  "Tertiary enrolment"
+)
+expected_sizes <- c(16L, 12L, 3L, 14L, 3L, 4L, 55L)
+if (length(status_levels) != length(status_labels) ||
+    !identical(as.integer(table(factor(diet$Employment, levels = status_levels))), expected_sizes)) {
+  stop("The category structure differs from the verified dataset; review display labels.")
+}
+analysis <- data.frame(
+  days = factor(diet$Breakfast, levels = 0:7),
+  employment_category = factor(diet$Employment,
+    levels = status_levels, labels = status_labels)
+)
+cat("Respondents:", nrow(analysis), "\n")
+cat("Source variables:", ncol(diet), "\n")
+cat("Missing values in analysis:", sum(is.na(analysis)), "\n")
+```
+
+## Visualisation
+
+The bars represent respondent **counts**, with the segments showing employment categories. The categories have different sample sizes, so the stacked heights must not be interpreted as group-normalised rates.
+
+```{r breakfast-chart, fig.width=10, fig.height=5.8, dpi=140, fig.align='center', fig.cap='Weekly breakfast frequency by employment category (respondent counts).'}
+library(ggplot2)
+breakfast_chart <- ggplot(analysis, aes(x = days, fill = employment_category)) +
+  geom_bar(width = 0.8) +
+  scale_x_discrete(drop = FALSE) +
+  labs(title = "Breakfast Frequency by Employment Category",
+       x = "Days per week", y = "Respondents (count)",
+       fill = "Employment category") +
+  theme_minimal(base_size = 12)
+breakfast_chart
+```
+
+## Descriptive summary
+
+```{r summary}
+frequency <- as.integer(table(factor(diet$Breakfast, levels = 0:7)))
+knitr::kable(data.frame(Days_per_week = 0:7, Respondents = frequency))
+cat("Reporting breakfast every day:", frequency[8], "of", nrow(diet),
+    sprintf("(%.1f%%)", 100 * frequency[8] / nrow(diet)), "\n")
+```
+
+## Limitations
+
+Responses are self-reported and observational. Employment groups are unevenly represented, and the chart shows raw counts rather than within-group rates. Results cannot be generalised without additional sampling information.
+
+The respondent-level dataset is intentionally kept out of the public repository.

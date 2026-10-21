@@ -1,0 +1,26 @@
+# Private data and local exports
+survey_data.csv
+*.csv
+*.xlsx
+*.xls
+*.RData
+*.rds
+.Rhistory
+.Rproj.user/
+.Ruserdata
+*.Rproj
+
+# Local R Markdown outputs
+breakfast_frequency.html
+lunch_frequency.html
+*_files/
+*_cache/
+*.knit.md
+*.utf8.md
+
+# Local development artifacts
+__pycache__/
+*.pyc
+*.zip
+.DS_Store
+Thumbs.db
